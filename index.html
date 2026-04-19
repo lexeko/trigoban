@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trigoban</title>
+  <link rel="icon" sizes="any" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23132433'/%3E%3Cpath d='M12 48 32 14 52 48Z' fill='%23245f73' stroke='%239ecdd9' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ccircle cx='32' cy='35' r='9' fill='none' stroke='%23f0b562' stroke-width='3'/%3E%3Ccircle cx='32' cy='35' r='3.5' fill='%23f0b562'/%3E%3C/svg%3E">
+  <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23132433'/%3E%3Cpath d='M12 48 32 14 52 48Z' fill='%23245f73' stroke='%239ecdd9' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ccircle cx='32' cy='35' r='9' fill='none' stroke='%23f0b562' stroke-width='3'/%3E%3Ccircle cx='32' cy='35' r='3.5' fill='%23f0b562'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#132433">
+  <style>
+    :root {
+      --bg-0: #0d1720;
+      --bg-1: #132433;
+      --panel: rgba(15, 29, 41, 0.86);
+      --panel-strong: rgba(11, 21, 31, 0.94);
+      --line: rgba(158, 205, 217, 0.2);
+      --line-strong: rgba(158, 205, 217, 0.42);
+      --text: #ecf4f2;
+      --muted: #a9c1c4;
+      --accent: #ffb347;
+      --accent-2: #62d2c8;
+      --accent-3: #f16b6f;
+      --floor-up: #1e5366;
+      --floor-down: #245f73;
+      --floor-target: #2d7c78;
+      --floor-solved: #2e8b57;
+      --wall-up: #263543;
+      --wall-down: #1f2c39;
+      --box: #f0b562;
+      --box-shadow: #ae6c17;
+      --player: #f7efe2;
+      --player-core: #ff8666;
+      --button: #173041;
+      --button-hover: #21475f;
+      --button-danger: #622a33;
+      --button-danger-hover: #7b3340;
+      --shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
+      --font-display: "Avenir Next Condensed", "Trebuchet MS", "Gill Sans", sans-serif;
+      --font-body: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      --font-mono: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 179, 71, 0.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(98, 210, 200, 0.12), transparent 30%),
+        linear-gradient(160deg, var(--bg-0), var(--bg-1) 58%, #0a1320 100%);
+      font-family: var(--font-body);
+    }
+
+    .app {
+      width: min(1200px, calc(100vw - 32px));
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.9fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: transparent;
+      border: none;
+      border-radius: var(--radius);
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+
+    .board-panel {
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .title-block {
+      position: relative;
+      padding: 10px 0 6px;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      line-height: 0.88;
+      position: relative;
+      display: inline-block;
+      padding-right: 14px;
+      color: transparent;
+      background: linear-gradient(180deg, #fff8dd 0%, #ffd37d 52%, #ffb347 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      text-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+    }
+
+    .title-block p {
+      margin: 18px 0 0;
+      color: var(--muted);
+      max-width: none;
+      width: 100%;
+      line-height: 1.45;
+      font-size: 1rem;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .stat-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .board-wrap {
+      position: relative;
+      border-radius: calc(var(--radius) - 4px);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background:
+        radial-gradient(circle at top, rgba(98, 210, 200, 0.07), transparent 35%),
+        linear-gradient(180deg, rgba(4, 12, 18, 0.95), rgba(10, 18, 26, 0.98));
+      min-height: 430px;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    #board {
+      width: 100%;
+      height: min(72vh, 760px);
+      display: block;
+    }
+
+    .win-banner {
+      position: absolute;
+      inset: 18px auto auto 18px;
+      max-width: min(360px, calc(100% - 36px));
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(26, 70, 53, 0.94);
+      border: 1px solid rgba(141, 255, 182, 0.35);
+      color: #eafff0;
+      box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28);
+      transform: translateY(-8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 220ms ease, opacity 220ms ease;
+    }
+
+    .win-banner.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .win-banner strong {
+      display: block;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .button-row,
+    .nav-row,
+    .pad-row {
+      display: grid;
+      gap: 10px;
+    }
+
+    .button-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .nav-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .pad {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .pad-3x3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .pad-3x3 button {
+      min-height: 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .pad-gap {
+      border-radius: 14px;
+      border: 1px dashed rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.025);
+      min-height: 56px;
+    }
+
+    .keycap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #fff3cf;
+      font-size: 0.77rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-bottom-color: rgba(255, 255, 255, 0.18);
+      background: linear-gradient(180deg, var(--button), #122838);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font: inherit;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+    }
+
+    button:hover:not(:disabled),
+    button:focus-visible:not(:disabled) {
+      background: linear-gradient(180deg, var(--button-hover), #17384d);
+      border-color: rgba(255, 255, 255, 0.22);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .danger {
+      background: linear-gradient(180deg, var(--button-danger), #4c1f27);
+    }
+
+    .danger:hover:not(:disabled),
+    .danger:focus-visible:not(:disabled) {
+      background: linear-gradient(180deg, var(--button-danger-hover), #5a2430);
+    }
+
+    .section {
+      background: rgba(255, 255, 255, 0.038);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-family: var(--font-display);
+    }
+
+    .section p,
+    .section li {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .section ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .section code {
+      font-family: var(--font-mono);
+      color: #fff3cf;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 1px 5px;
+    }
+
+    .level-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .tile {
+      cursor: default;
+      transition: filter 120ms ease, transform 120ms ease;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .tile.floor.up {
+      fill: var(--floor-up);
+      stroke: rgba(224, 255, 255, 0.15);
+      stroke-width: 0.9;
+    }
+
+    .tile.floor.down {
+      fill: var(--floor-down);
+      stroke: rgba(224, 255, 255, 0.17);
+      stroke-width: 0.9;
+    }
+
+    .tile.floor.target {
+      fill: var(--floor-target);
+    }
+
+    .tile.floor.on-target {
+      fill: var(--floor-solved);
+    }
+
+    .tile.wall.up {
+      fill: var(--wall-up);
+      stroke: rgba(210, 236, 255, 0.08);
+      stroke-width: 0.8;
+    }
+
+    .tile.wall.down {
+      fill: var(--wall-down);
+      stroke: rgba(210, 236, 255, 0.08);
+      stroke-width: 0.8;
+    }
+
+    .target-ring {
+      fill: none;
+      stroke: rgba(255, 242, 186, 0.95);
+      stroke-width: 2.3;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .target-core {
+      fill: rgba(255, 241, 196, 0.28);
+      pointer-events: none;
+    }
+
+    .box-top {
+      fill: #f6c56f;
+      stroke: rgba(97, 56, 14, 0.86);
+      stroke-width: 1.2;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .box-front {
+      fill: #d9953c;
+      stroke: rgba(97, 56, 14, 0.86);
+      stroke-width: 1.25;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .box-slat {
+      fill: none;
+      stroke: rgba(97, 56, 14, 0.72);
+      stroke-width: 1.3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .box-nail {
+      fill: rgba(132, 76, 22, 0.72);
+      pointer-events: none;
+    }
+
+    .box.on-target .box-front {
+      fill: #efb45f;
+      filter: drop-shadow(0 0 10px rgba(255, 212, 119, 0.4));
+    }
+
+    .box.on-target .box-top {
+      fill: #ffe09d;
+    }
+
+    .player-body {
+      fill: #ff7f50;
+      stroke: rgba(114, 52, 33, 0.9);
+      stroke-width: 1.1;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .player-hat {
+      fill: #ffbf34;
+      stroke: rgba(76, 52, 14, 0.78);
+      stroke-width: 1.1;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .player-brim {
+      fill: #f0a81f;
+      pointer-events: none;
+    }
+
+    .player-eye {
+      fill: rgba(34, 28, 24, 0.92);
+      pointer-events: none;
+    }
+
+    .player-vest {
+      fill: #2fc17d;
+      pointer-events: none;
+    }
+
+    .player-neck {
+      fill: #f2dfc4;
+      pointer-events: none;
+    }
+
+    .player-shoulders {
+      fill: #f2dfc4;
+      pointer-events: none;
+    }
+
+    .player-vest-stripe {
+      fill: #2fc17d;
+      pointer-events: none;
+    }
+
+    .player-hand {
+      fill: #f2dfc4;
+      stroke: rgba(114, 52, 33, 0.35);
+      stroke-width: 0.55;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .player-mouth {
+      fill: #2fc17d;
+      stroke: none;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .player-mustache {
+      fill: rgba(106, 77, 49, 0.95);
+      pointer-events: none;
+    }
+
+    .player-helmet-mark {
+      fill: rgba(255, 251, 232, 0.95);
+      pointer-events: none;
+    }
+
+    .player-feet {
+      fill: #7b4a2a;
+      pointer-events: none;
+    }
+
+    .player-token {
+      pointer-events: none;
+    }
+
+    .player-hover-zone {
+      fill: rgba(255, 255, 255, 0.001);
+      cursor: pointer;
+      pointer-events: all;
+    }
+
+    .move-hints {
+      opacity: 0;
+      transition: opacity 120ms ease;
+      pointer-events: none;
+    }
+
+    .move-hints.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .move-hint {
+      cursor: default;
+    }
+
+    .move-hint-line {
+      fill: none;
+      stroke: rgba(158, 205, 217, 0.78);
+      stroke-width: 2.7;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .move-hint-head {
+      fill: #ffd37d;
+      stroke: rgba(19, 36, 51, 0.45);
+      stroke-width: 1.1;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .move-hint-keycap {
+      fill: rgba(19, 36, 51, 0.94);
+      stroke: rgba(158, 205, 217, 0.32);
+      stroke-width: 1.25;
+      vector-effect: non-scaling-stroke;
+      pointer-events: none;
+    }
+
+    .move-hint-keytext {
+      fill: #fff3cf;
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+
+    .move-hint:hover .move-hint-line,
+    .move-hint:focus-visible .move-hint-line {
+      stroke: rgba(255, 211, 125, 0.98);
+    }
+
+    .move-hint:hover .move-hint-head,
+    .move-hint:focus-visible .move-hint-head {
+      fill: #fff0bb;
+    }
+
+    .move-hint:hover .move-hint-keycap,
+    .move-hint:focus-visible .move-hint-keycap {
+      fill: rgba(30, 83, 102, 0.98);
+      stroke: rgba(255, 211, 125, 0.82);
+    }
+
+    .board-caption {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-size: 0.82rem;
+      letter-spacing: 0.04em;
+      backdrop-filter: blur(8px);
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .meta-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      #board {
+        height: min(64vh, 620px);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        width: min(100vw - 18px, 100%);
+        margin: 9px auto 18px;
+        gap: 14px;
+      }
+
+      .board-panel,
+      .sidebar {
+        padding: 14px;
+      }
+
+      .title-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .meta-grid,
+      .button-row,
+      .nav-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .pad {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      #board {
+        height: min(54vh, 460px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel board-panel">
+      <div class="title-row">
+        <div class="title-block">
+          <h1>Trigoban</h1>
+          <p>Push every crate onto a glowing target across a tiling of alternating triangles. Crates only move one at a time, and only if the tile beyond is clear.</p>
+        </div>
+      </div>
+
+      <div class="meta-grid">
+        <div class="stat">
+          <span class="stat-label">Level</span>
+          <div id="levelNumber" class="stat-value">1 / 13</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Moves</span>
+          <div id="moveCount" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Pushes</span>
+          <div id="pushCount" class="stat-value">0</div>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Solved</span>
+          <div id="solvedCount" class="stat-value">0 / 13</div>
+        </div>
+      </div>
+
+      <div class="board-wrap">
+        <svg id="board" aria-label="Trigoban board" role="img"></svg>
+        <div id="winBanner" class="win-banner" aria-live="polite">
+          <strong>Level Solved</strong>
+          <span id="winText">All crates are on targets.</span>
+        </div>
+        <div class="board-caption">Hover the worker to reveal move hints.</div>
+      </div>
+    </section>
+
+    <aside class="panel sidebar">
+      <section class="section">
+        <div id="levelName" class="level-name">First Nudge</div>
+        <div id="levelBlurb" class="subtle">A one-push warm-up.</div>
+      </section>
+
+      <section class="section">
+        <h2>Actions</h2>
+        <div class="button-row">
+          <button id="restartBtn" type="button">Restart Level</button>
+          <button id="undoBtn" type="button">Undo</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Levels</h2>
+        <div class="nav-row">
+          <button id="prevBtn" type="button">Previous Level</button>
+          <button id="nextBtn" type="button">Next Level</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Move Pad</h2>
+        <div class="pad pad-3x3">
+          <button id="padUpLeft" type="button" aria-label="Move up-left">Up Left <span class="keycap">Q</span></button>
+          <button id="padUp" type="button" aria-label="Move upward">Up <span class="keycap">W / ↑</span></button>
+          <button id="padUpRight" type="button" aria-label="Move up-right">Up Right <span class="keycap">E</span></button>
+          <button id="padLeft" type="button" aria-label="Move left">Left <span class="keycap">A / ←</span></button>
+          <div class="pad-gap" aria-hidden="true"></div>
+          <button id="padRight" type="button" aria-label="Move right">Right <span class="keycap">D / →</span></button>
+          <button id="padDownLeft" type="button" aria-label="Move down-left">Down Left <span class="keycap">Z</span></button>
+          <button id="padDown" type="button" aria-label="Move downward">Down <span class="keycap">X / ↓</span></button>
+          <button id="padDownRight" type="button" aria-label="Move down-right">Down Right <span class="keycap">C</span></button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>How It Works</h2>
+        <p>Each tile is one equilateral triangle, and triangles alternate orientation. In play you can move or push horizontally, diagonally along the two slanted axes, and vertically through the top or bottom edge when the current triangle orientation allows it.</p>
+      </section>
+
+      <section class="section">
+        <button id="resetBtn" type="button" class="danger">Reset All Progress</button>
+        <p class="footer-note" style="margin-top: 10px;">Progress is saved automatically in your browser, including the current board, counters, and undo history for each level.</p>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    // Constants and level data
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const STORAGE_KEY = "trigoban-save-v1";
+    const TRI_SIDE = 92;
+    const TRI_HALF = TRI_SIDE / 2;
+    const TRI_HEIGHT = Math.sqrt(3) * TRI_SIDE / 2;
+    const WORLD_DIRECTIONS = {
+      left: { x: -1, y: 0 },
+      right: { x: 1, y: 0 },
+      upLeft: { x: -0.5, y: -Math.sqrt(3) / 2 },
+      upRight: { x: 0.5, y: -Math.sqrt(3) / 2 },
+      downLeft: { x: -0.5, y: Math.sqrt(3) / 2 },
+      downRight: { x: 0.5, y: Math.sqrt(3) / 2 }
+    };
+
+    const LEVEL_DATA = [
+      {
+        name: "First Nudge",
+        blurb: "A soft introduction where a few of gentle pushes reveal how movement really works.",
+        rows: [
+          "########",
+          "#.P....#",
+          "#.B....#",
+          "#....T.#",
+          "#......#",
+          "#......#",
+          "########"
+        ]
+      },
+      {
+        name: "Dead Zone Drift",
+        blurb: "A quiet dead zone blocks the obvious line, so you have to circle wide before anything will budge.",
+        rows: [
+          "########",
+          "#......#",
+          "#B.....#",
+          "##.....#",
+          "###.#P.#",
+          "#T.....#",
+          "#.#.#..#",
+          "########"
+        ]
+      },
+      {
+        name: "Road Blocks",
+        blurb: "Awkward blockers force detours before the crates can be lined up on a clean route to their targets.",
+        rows: [
+          "##########",
+          "#.###....#",
+          "#...B....#",
+          "#.....#T##",
+          "##...##..#",
+          "###..#T..#",
+          "###..B.P.#",
+          "##########"
+        ]
+      },
+    ];
+
+    // Coordinate and neighbor logic
+    function keyOf(row, col) {
+      return row + "," + col;
+    }
+
+    function parseKey(key) {
+      const [row, col] = key.split(",").map(Number);
+      return { row, col };
+    }
+
+    function orientationAt(row, col) {
+      return (row + col) % 2 === 0 ? "up" : "down";
+    }
+
+    function stepKey(key, direction) {
+      const { row, col } = parseKey(key);
+      const orientation = orientationAt(row, col);
+      if (direction === "left") {
+        return keyOf(row, col - 1);
+      }
+      if (direction === "right") {
+        return keyOf(row, col + 1);
+      }
+      if (direction === "up") {
+        return orientation === "down" ? keyOf(row - 1, col) : null;
+      }
+      if (direction === "down") {
+        return orientation === "up" ? keyOf(row + 1, col) : null;
+      }
+      return null;
+    }
+
+    function neighborKeys(key) {
+      return ["left", "right", "up", "down"]
+        .map((direction) => stepKey(key, direction))
+        .filter(Boolean);
+    }
+
+    function centerOfKey(key) {
+      const { row, col } = parseKey(key);
+      return triangleCentroid(row, col);
+    }
+
+    function vectorBetweenKeys(fromKey, toKey) {
+      const from = centerOfKey(fromKey);
+      const to = centerOfKey(toKey);
+      return {
+        x: to.x - from.x,
+        y: to.y - from.y
+      };
+    }
+
+    function trianglePoints(row, col) {
+      const x = col * TRI_HALF;
+      const y = row * TRI_HEIGHT;
+      if (orientationAt(row, col) === "up") {
+        return [
+          [x, y + TRI_HEIGHT],
+          [x + TRI_HALF, y],
+          [x + TRI_SIDE, y + TRI_HEIGHT]
+        ];
+      }
+      return [
+        [x, y],
+        [x + TRI_SIDE, y],
+        [x + TRI_HALF, y + TRI_HEIGHT]
+      ];
+    }
+
+    function triangleCentroid(row, col) {
+      const x = col * TRI_HALF;
+      const y = row * TRI_HEIGHT;
+      return orientationAt(row, col) === "up"
+        ? { x: x + TRI_HALF, y: y + (TRI_HEIGHT * 2) / 3 }
+        : { x: x + TRI_HALF, y: y + TRI_HEIGHT / 3 };
+    }
+
+    // Level parsing
+    function parseLevel(definition, index) {
+      const height = definition.rows.length;
+      const width = definition.rows.reduce((max, row) => Math.max(max, row.length), 0);
+      const floors = new Set();
+      const walls = new Set();
+      const targets = new Set();
+      const boxes = [];
+      let player = null;
+
+      for (let row = 0; row < height; row += 1) {
+        for (let col = 0; col < width; col += 1) {
+          const ch = definition.rows[row][col] || " ";
+          const key = keyOf(row, col);
+          if (ch === " ") {
+            continue;
+          }
+          if (ch === "#") {
+            walls.add(key);
+            continue;
+          }
+          floors.add(key);
+          if (ch === "T" || ch === "*" || ch === "+") {
+            targets.add(key);
+          }
+          if (ch === "B" || ch === "*") {
+            boxes.push(key);
+          }
+          if (ch === "P" || ch === "+") {
+            player = key;
+          }
+        }
+      }
+
+      if (!player) {
+        throw new Error("Level " + (index + 1) + " is missing a player start.");
+      }
+      if (boxes.length !== targets.size) {
+        throw new Error("Level " + (index + 1) + " must have matching box and target counts.");
+      }
+
+      return {
+        index,
+        name: definition.name,
+        blurb: definition.blurb,
+        rows: definition.rows.slice(),
+        width,
+        height,
+        floors,
+        walls,
+        tiles: new Set([...floors, ...walls]),
+        targets,
+        initialPlayer: player,
+        initialBoxes: boxes.slice().sort()
+      };
+    }
+
+    const LEVELS = LEVEL_DATA.map(parseLevel);
+
+    // State management
+    function createFreshLevelState(level) {
+      return {
+        player: level.initialPlayer,
+        boxes: level.initialBoxes.slice().sort(),
+        moveCount: 0,
+        pushCount: 0,
+        history: []
+      };
+    }
+
+    function snapshotState(state) {
+      return {
+        player: state.player,
+        boxes: state.boxes.slice().sort(),
+        moveCount: state.moveCount,
+        pushCount: state.pushCount
+      };
+    }
+
+    function restoreSnapshot(snapshot) {
+      return {
+        player: snapshot.player,
+        boxes: snapshot.boxes.slice().sort(),
+        moveCount: snapshot.moveCount,
+        pushCount: snapshot.pushCount,
+        history: []
+      };
+    }
+
+    function serializeLevelState(state) {
+      return {
+        player: state.player,
+        boxes: state.boxes.slice().sort(),
+        moveCount: state.moveCount,
+        pushCount: state.pushCount,
+        history: state.history.map(snapshotState)
+      };
+    }
+
+    function isSolved(level, state) {
+      return state.boxes.every((box) => level.targets.has(box));
+    }
+
+    function boxesToSet(state) {
+      return new Set(state.boxes);
+    }
+
+    function stepWorldKey(key, directionName) {
+      const { row, col } = parseKey(key);
+      const orientation = orientationAt(row, col);
+
+      if (orientation === "up") {
+        if (directionName === "left" || directionName === "upLeft") {
+          return keyOf(row, col - 1);
+        }
+        if (directionName === "right" || directionName === "upRight") {
+          return keyOf(row, col + 1);
+        }
+        if (directionName === "downLeft" || directionName === "downRight") {
+          return keyOf(row + 1, col);
+        }
+      } else {
+        if (directionName === "left" || directionName === "downLeft") {
+          return keyOf(row, col - 1);
+        }
+        if (directionName === "right" || directionName === "downRight") {
+          return keyOf(row, col + 1);
+        }
+        if (directionName === "upLeft" || directionName === "upRight") {
+          return keyOf(row - 1, col);
+        }
+      }
+
+      return null;
+    }
+
+    function directionsTowardNeighbor(originKey, targetKey) {
+      const matches = [];
+      for (const directionName of Object.keys(WORLD_DIRECTIONS)) {
+        if (stepWorldKey(originKey, directionName) === targetKey) {
+          matches.push(directionName);
+        }
+      }
+      return matches;
+    }
+
+    function commitMove(nextKey, beyondKey) {
+      const historyEntry = snapshotState(gameState);
+      gameState.history.push(historyEntry);
+      if (beyondKey) {
+        gameState.boxes = gameState.boxes.map((box) => (box === nextKey ? beyondKey : box)).sort();
+        gameState.pushCount += 1;
+      }
+      gameState.player = nextKey;
+      gameState.moveCount += 1;
+      if (isSolved(currentLevel, gameState)) {
+        storageModel.solved[currentLevelIndex] = true;
+      }
+      rememberCurrentLevelState();
+      render();
+      return true;
+    }
+
+    function getWorldMoveResult(originKey, directionName, boxes = boxesToSet(gameState)) {
+      const nextKey = stepWorldKey(originKey, directionName);
+      if (!nextKey || !currentLevel.floors.has(nextKey)) {
+        return null;
+      }
+      if (!boxes.has(nextKey)) {
+        return { nextKey, beyondKey: null };
+      }
+      const beyondKey = stepWorldKey(nextKey, directionName);
+      if (!beyondKey || !currentLevel.floors.has(beyondKey) || boxes.has(beyondKey)) {
+        return null;
+      }
+      return { nextKey, beyondKey };
+    }
+
+    function getVerticalMoveResult(originKey, directionName, boxes = boxesToSet(gameState)) {
+      const nextKey = stepKey(originKey, directionName);
+      if (!nextKey || !currentLevel.floors.has(nextKey)) {
+        return null;
+      }
+      if (!boxes.has(nextKey)) {
+        return { nextKey, beyondKey: null };
+      }
+      const beyondKey = stepKey(nextKey, directionName);
+      if (!beyondKey || !currentLevel.floors.has(beyondKey) || boxes.has(beyondKey)) {
+        return null;
+      }
+      return { nextKey, beyondKey };
+    }
+
+    function attemptMoveByDirection(directionName) {
+      const move = getWorldMoveResult(gameState.player, directionName);
+      if (!move) {
+        return false;
+      }
+      return commitMove(move.nextKey, move.beyondKey);
+    }
+
+    function attemptVerticalMove(directionName) {
+      const move = getVerticalMoveResult(gameState.player, directionName);
+      if (!move) {
+        return false;
+      }
+      return commitMove(move.nextKey, move.beyondKey);
+    }
+
+    function validateSerializedState(level, candidate) {
+      if (!candidate || typeof candidate !== "object") {
+        return null;
+      }
+      if (typeof candidate.player !== "string" || !level.floors.has(candidate.player)) {
+        return null;
+      }
+      if (!Array.isArray(candidate.boxes) || candidate.boxes.length !== level.initialBoxes.length) {
+        return null;
+      }
+      const uniqueBoxes = new Set(candidate.boxes);
+      if (uniqueBoxes.size !== candidate.boxes.length) {
+        return null;
+      }
+      for (const box of candidate.boxes) {
+        if (typeof box !== "string" || !level.floors.has(box)) {
+          return null;
+        }
+      }
+      if (uniqueBoxes.has(candidate.player)) {
+        return null;
+      }
+
+      const moveCount = Number.isInteger(candidate.moveCount) && candidate.moveCount >= 0 ? candidate.moveCount : 0;
+      const pushCount = Number.isInteger(candidate.pushCount) && candidate.pushCount >= 0 ? candidate.pushCount : 0;
+      const history = [];
+
+      if (Array.isArray(candidate.history)) {
+        for (const snapshot of candidate.history) {
+          if (
+            snapshot &&
+            typeof snapshot === "object" &&
+            typeof snapshot.player === "string" &&
+            level.floors.has(snapshot.player) &&
+            Array.isArray(snapshot.boxes) &&
+            snapshot.boxes.length === level.initialBoxes.length &&
+            new Set(snapshot.boxes).size === snapshot.boxes.length &&
+            snapshot.boxes.every((box) => typeof box === "string" && level.floors.has(box)) &&
+            !new Set(snapshot.boxes).has(snapshot.player) &&
+            Number.isInteger(snapshot.moveCount) &&
+            snapshot.moveCount >= 0 &&
+            Number.isInteger(snapshot.pushCount) &&
+            snapshot.pushCount >= 0
+          ) {
+            history.push({
+              player: snapshot.player,
+              boxes: snapshot.boxes.slice().sort(),
+              moveCount: snapshot.moveCount,
+              pushCount: snapshot.pushCount
+            });
+          }
+        }
+      }
+
+      return {
+        player: candidate.player,
+        boxes: candidate.boxes.slice().sort(),
+        moveCount,
+        pushCount,
+        history
+      };
+    }
+
+    // Local storage persistence
+    function freshStorageModel() {
+      return {
+        currentLevel: 0,
+        solved: LEVELS.map(() => false),
+        states: LEVELS.map(() => null)
+      };
+    }
+
+    function sanitizeStorage(raw) {
+      const fallback = freshStorageModel();
+      if (!raw || typeof raw !== "object") {
+        return fallback;
+      }
+
+      const currentLevel = Number.isInteger(raw.currentLevel)
+        ? Math.min(Math.max(raw.currentLevel, 0), LEVELS.length - 1)
+        : 0;
+
+      const solved = LEVELS.map((_, index) => {
+        return Array.isArray(raw.solved) ? Boolean(raw.solved[index]) : false;
+      });
+
+      const states = LEVELS.map((level, index) => {
+        if (!Array.isArray(raw.states)) {
+          return null;
+        }
+        return validateSerializedState(level, raw.states[index]);
+      });
+
+      return { currentLevel, solved, states };
+    }
+
+    function loadStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          return freshStorageModel();
+        }
+        return sanitizeStorage(JSON.parse(raw));
+      } catch (error) {
+        console.warn("Trigoban storage reset:", error);
+        return freshStorageModel();
+      }
+    }
+
+    function saveStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(storageModel));
+      } catch (error) {
+        console.warn("Trigoban could not save progress:", error);
+      }
+    }
+
+    function rememberCurrentLevelState() {
+      storageModel.currentLevel = currentLevelIndex;
+      storageModel.states[currentLevelIndex] = serializeLevelState(gameState);
+      if (isSolved(currentLevel, gameState)) {
+        storageModel.solved[currentLevelIndex] = true;
+      }
+      saveStorage();
+    }
+
+    // Movement and push rules
+    function undoMove() {
+      if (!gameState.history.length) {
+        return;
+      }
+      const snapshot = gameState.history.pop();
+      gameState.player = snapshot.player;
+      gameState.boxes = snapshot.boxes.slice().sort();
+      gameState.moveCount = snapshot.moveCount;
+      gameState.pushCount = snapshot.pushCount;
+      rememberCurrentLevelState();
+      render();
+    }
+
+    function restartLevel() {
+      gameState = createFreshLevelState(currentLevel);
+      rememberCurrentLevelState();
+      render();
+    }
+
+    // UI updates and rendering
+    const boardElement = document.getElementById("board");
+    const levelNumberElement = document.getElementById("levelNumber");
+    const moveCountElement = document.getElementById("moveCount");
+    const pushCountElement = document.getElementById("pushCount");
+    const solvedCountElement = document.getElementById("solvedCount");
+    const levelNameElement = document.getElementById("levelName");
+    const levelBlurbElement = document.getElementById("levelBlurb");
+    const winBannerElement = document.getElementById("winBanner");
+    const winTextElement = document.getElementById("winText");
+
+    function createSvgElement(tag, attributes) {
+      const node = document.createElementNS(SVG_NS, tag);
+      for (const [name, value] of Object.entries(attributes)) {
+        node.setAttribute(name, String(value));
+      }
+      return node;
+    }
+
+    function updateBoardViewBox() {
+      const width = (currentLevel.width + 1) * TRI_HALF;
+      const height = (currentLevel.height + 1) * TRI_HEIGHT;
+      boardElement.setAttribute("viewBox", "0 0 " + width + " " + height);
+      boardElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    }
+
+    function renderBoard() {
+      updateBoardViewBox();
+      boardElement.replaceChildren();
+
+      const tileLayer = createSvgElement("g", {});
+      const markerLayer = createSvgElement("g", {});
+      const actorLayer = createSvgElement("g", {});
+      const interactionLayer = createSvgElement("g", {});
+
+      const boxSet = boxesToSet(gameState);
+
+      for (let row = 0; row < currentLevel.height; row += 1) {
+        for (let col = 0; col < currentLevel.width; col += 1) {
+          const key = keyOf(row, col);
+          if (!currentLevel.floors.has(key) && !currentLevel.walls.has(key)) {
+            continue;
+          }
+
+          const orientation = orientationAt(row, col);
+          const points = trianglePoints(row, col).map((point) => point.join(",")).join(" ");
+          const isWall = currentLevel.walls.has(key);
+          const isTarget = currentLevel.targets.has(key);
+          const tile = createSvgElement("polygon", {
+            points,
+            class: [
+              "tile",
+              isWall ? "wall" : "floor",
+              orientation,
+              !isWall && isTarget ? "target" : "",
+              !isWall && isTarget && boxSet.has(key) ? "on-target" : ""
+            ].filter(Boolean).join(" "),
+            "data-key": key
+          });
+
+          tileLayer.appendChild(tile);
+
+          if (!isWall && isTarget) {
+            const center = triangleCentroid(row, col);
+            markerLayer.appendChild(createSvgElement("circle", {
+              cx: center.x,
+              cy: center.y,
+              r: TRI_SIDE * 0.115,
+              class: "target-core"
+            }));
+            markerLayer.appendChild(createSvgElement("circle", {
+              cx: center.x,
+              cy: center.y,
+              r: TRI_SIDE * 0.2,
+              class: "target-ring"
+            }));
+          }
+        }
+      }
+
+      for (const boxKey of gameState.boxes) {
+        const { row, col } = parseKey(boxKey);
+        const center = triangleCentroid(row, col);
+        const group = createSvgElement("g", {
+          class: currentLevel.targets.has(boxKey) ? "box on-target" : "box"
+        });
+        const size = TRI_SIDE * 0.28;
+        const lip = TRI_SIDE * 0.05;
+        const left = center.x - size / 2;
+        const right = center.x + size / 2;
+        const top = center.y - size / 2 + lip * 0.35;
+        const bottom = center.y + size / 2 + lip * 0.15;
+        const inset = size * 0.16;
+
+        group.appendChild(createSvgElement("rect", {
+          x: left,
+          y: top,
+          width: size,
+          height: size * 0.18,
+          rx: TRI_SIDE * 0.02,
+          ry: TRI_SIDE * 0.02,
+          class: "box-top"
+        }));
+        group.appendChild(createSvgElement("rect", {
+          x: left,
+          y: top + size * 0.14,
+          width: size,
+          height: bottom - (top + size * 0.14),
+          rx: TRI_SIDE * 0.025,
+          ry: TRI_SIDE * 0.025,
+          class: "box-front"
+        }));
+        group.appendChild(createSvgElement("circle", {
+          cx: left + inset * 1.125,
+          cy: top + size * 0.29,
+          r: TRI_SIDE * 0.015,
+          class: "box-nail"
+        }));
+        group.appendChild(createSvgElement("circle", {
+          cx: right - inset * 1.125,
+          cy: top + size * 0.29,
+          r: TRI_SIDE * 0.015,
+          class: "box-nail"
+        }));
+        group.appendChild(createSvgElement("circle", {
+          cx: left + inset * 1.125,
+          cy: bottom - inset * 0.85,
+          r: TRI_SIDE * 0.015,
+          class: "box-nail"
+        }));
+        group.appendChild(createSvgElement("circle", {
+          cx: right - inset * 1.125,
+          cy: bottom - inset * 0.85,
+          r: TRI_SIDE * 0.015,
+          class: "box-nail"
+        }));
+        actorLayer.appendChild(group);
+      }
+
+      {
+        const { row, col } = parseKey(gameState.player);
+        const center = triangleCentroid(row, col);
+        const interactionGroup = createSvgElement("g", {});
+        const hoverZone = createSvgElement("polygon", {
+          points: trianglePoints(row, col).map((point) => point.join(",")).join(" "),
+          class: "player-hover-zone"
+        });
+        const hintLayer = createSvgElement("g", {
+          class: "move-hints"
+        });
+        const group = createSvgElement("g", { class: "player player-token" });
+        const scale = 1.25;
+        group.appendChild(createSvgElement("ellipse", {
+          cx: center.x,
+          cy: center.y + TRI_SIDE * 0.145 * scale,
+          rx: TRI_SIDE * 0.062 * scale,
+          ry: TRI_SIDE * 0.018 * scale,
+          class: "player-feet"
+        }));
+        group.appendChild(createSvgElement("circle", {
+          cx: center.x - TRI_SIDE * 0.078 * scale,
+          cy: center.y + TRI_SIDE * 0.09 * scale,
+          r: TRI_SIDE * 0.032 * scale,
+          class: "player-hand"
+        }));
+        group.appendChild(createSvgElement("circle", {
+          cx: center.x + TRI_SIDE * 0.078 * scale,
+          cy: center.y + TRI_SIDE * 0.09 * scale,
+          r: TRI_SIDE * 0.032 * scale,
+          class: "player-hand"
+        }));
+        group.appendChild(createSvgElement("rect", {
+          x: center.x - TRI_SIDE * 0.085 * scale,
+          y: center.y + TRI_SIDE * 0.04 * scale,
+          width: TRI_SIDE * 0.17 * scale,
+          height: TRI_SIDE * 0.1 * scale,
+          rx: TRI_SIDE * 0.026 * scale,
+          ry: TRI_SIDE * 0.026 * scale,
+          class: "player-body"
+        }));
+        group.appendChild(createSvgElement("rect", {
+          x: center.x - TRI_SIDE * 0.036 * scale,
+          y: center.y + TRI_SIDE * 0.048 * scale,
+          width: TRI_SIDE * 0.072 * scale,
+          height: TRI_SIDE * 0.018 * scale,
+          rx: TRI_SIDE * 0.012 * scale,
+          ry: TRI_SIDE * 0.012 * scale,
+          class: "player-vest"
+        }));
+        group.appendChild(createSvgElement("rect", {
+          x: center.x - TRI_SIDE * 0.043 * scale,
+          y: center.y + TRI_SIDE * 0.066 * scale,
+          width: TRI_SIDE * 0.086 * scale,
+          height: TRI_SIDE * 0.014 * scale,
+          rx: TRI_SIDE * 0.01 * scale,
+          ry: TRI_SIDE * 0.01 * scale,
+          class: "player-vest-stripe"
+        }));
+        group.appendChild(createSvgElement("circle", {
+          cx: center.x,
+          cy: center.y - TRI_SIDE * 0.002 * scale,
+          r: TRI_SIDE * 0.058 * scale,
+          class: "player-shoulders"
+        }));
+        group.appendChild(createSvgElement("path", {
+          d: [
+            "M", center.x - TRI_SIDE * 0.0702 * scale, center.y - TRI_SIDE * 0.018 * scale,
+            "L", center.x - TRI_SIDE * 0.0702 * scale, center.y - TRI_SIDE * 0.063 * scale,
+            "Q", center.x - TRI_SIDE * 0.0702 * scale, center.y - TRI_SIDE * 0.092 * scale, center.x - TRI_SIDE * 0.0198 * scale, center.y - TRI_SIDE * 0.094 * scale,
+            "Q", center.x, center.y - TRI_SIDE * 0.098 * scale, center.x + TRI_SIDE * 0.0198 * scale, center.y - TRI_SIDE * 0.094 * scale,
+            "Q", center.x + TRI_SIDE * 0.0702 * scale, center.y - TRI_SIDE * 0.092 * scale, center.x + TRI_SIDE * 0.0702 * scale, center.y - TRI_SIDE * 0.063 * scale,
+            "L", center.x + TRI_SIDE * 0.0702 * scale, center.y - TRI_SIDE * 0.018 * scale,
+            "Z"
+          ].join(" "),
+          class: "player-hat"
+        }));
+        group.appendChild(createSvgElement("rect", {
+          x: center.x - TRI_SIDE * 0.0792 * scale,
+          y: center.y - TRI_SIDE * 0.022 * scale,
+          width: TRI_SIDE * 0.1584 * scale,
+          height: TRI_SIDE * 0.014 * scale,
+          rx: TRI_SIDE * 0.012 * scale,
+          ry: TRI_SIDE * 0.012 * scale,
+          class: "player-brim"
+        }));
+        group.appendChild(createSvgElement("ellipse", {
+          cx: center.x,
+          cy: center.y - TRI_SIDE * 0.053 * scale,
+          rx: TRI_SIDE * 0.024 * scale,
+          ry: TRI_SIDE * 0.012 * scale,
+          class: "player-helmet-mark"
+        }));
+        group.appendChild(createSvgElement("rect", {
+          x: center.x - TRI_SIDE * 0.011 * scale,
+          y: center.y + TRI_SIDE * 0.032 * scale,
+          width: TRI_SIDE * 0.022 * scale,
+          height: TRI_SIDE * 0.012 * scale,
+          rx: TRI_SIDE * 0.01 * scale,
+          ry: TRI_SIDE * 0.01 * scale,
+          class: "player-neck"
+        }));
+        group.appendChild(createSvgElement("circle", {
+          cx: center.x - TRI_SIDE * 0.021 * scale,
+          cy: center.y - TRI_SIDE * 0.008 * scale,
+          r: TRI_SIDE * 0.0075 * scale,
+          class: "player-eye"
+        }));
+        group.appendChild(createSvgElement("circle", {
+          cx: center.x + TRI_SIDE * 0.021 * scale,
+          cy: center.y - TRI_SIDE * 0.008 * scale,
+          r: TRI_SIDE * 0.0075 * scale,
+          class: "player-eye"
+        }));
+        group.appendChild(createSvgElement("path", {
+          d: [
+            "M", center.x - TRI_SIDE * 0.024 * scale, center.y + TRI_SIDE * 0.008 * scale,
+            "Q", center.x - TRI_SIDE * 0.01 * scale, center.y + TRI_SIDE * 0.02 * scale, center.x, center.y + TRI_SIDE * 0.012 * scale,
+            "Q", center.x + TRI_SIDE * 0.01 * scale, center.y + TRI_SIDE * 0.02 * scale, center.x + TRI_SIDE * 0.024 * scale, center.y + TRI_SIDE * 0.008 * scale,
+            "Q", center.x + TRI_SIDE * 0.01 * scale, center.y - TRI_SIDE * 0.003 * scale, center.x, center.y + TRI_SIDE * 0.003 * scale,
+            "Q", center.x - TRI_SIDE * 0.01 * scale, center.y - TRI_SIDE * 0.003 * scale, center.x - TRI_SIDE * 0.024 * scale, center.y + TRI_SIDE * 0.008 * scale,
+            "Z"
+          ].join(" "),
+          class: "player-mustache"
+        }));
+        group.appendChild(createSvgElement("rect", {
+          x: center.x - TRI_SIDE * 0.048 * scale,
+          y: center.y + TRI_SIDE * 0.085 * scale,
+          width: TRI_SIDE * 0.096 * scale,
+          height: TRI_SIDE * 0.006 * scale,
+          rx: TRI_SIDE * 0.004 * scale,
+          ry: TRI_SIDE * 0.004 * scale,
+          fill: "rgba(255,255,255,0.18)"
+        }));
+        const showHints = () => hintLayer.classList.add("visible");
+        const hideHints = () => hintLayer.classList.remove("visible");
+        interactionGroup.addEventListener("mouseenter", showHints);
+        interactionGroup.addEventListener("mouseleave", hideHints);
+        actorLayer.appendChild(group);
+
+        const SQRT3_OVER_2 = Math.sqrt(3) / 2;
+        const hintDefinitions = [
+          { keyLabel: "Q", direction: "upLeft", type: "world", axisX: -0.5, axisY: -SQRT3_OVER_2, anchor: 0.24, length: 0.12, keyOffset: 0.085 },
+          { keyLabel: "W", direction: "up", type: "vertical", axisX: 0, axisY: -1, anchor: 0.27, length: 0.13, keyOffset: 0.092 },
+          { keyLabel: "E", direction: "upRight", type: "world", axisX: 0.5, axisY: -SQRT3_OVER_2, anchor: 0.24, length: 0.12, keyOffset: 0.085 },
+          { keyLabel: "A", direction: "left", type: "world", axisX: -1, axisY: 0, anchor: 0.29, length: 0.13, keyOffset: 0.09 },
+          { keyLabel: "D", direction: "right", type: "world", axisX: 1, axisY: 0, anchor: 0.29, length: 0.13, keyOffset: 0.09 },
+          { keyLabel: "Z", direction: "downLeft", type: "world", axisX: -0.5, axisY: SQRT3_OVER_2, anchor: 0.26, length: 0.12, keyOffset: 0.085 },
+          { keyLabel: "X", direction: "down", type: "vertical", axisX: 0, axisY: 1, anchor: 0.31, length: 0.13, keyOffset: 0.092 },
+          { keyLabel: "C", direction: "downRight", type: "world", axisX: 0.5, axisY: SQRT3_OVER_2, anchor: 0.26, length: 0.12, keyOffset: 0.085 }
+        ];
+
+        for (const hint of hintDefinitions) {
+          const move = hint.type === "vertical"
+            ? getVerticalMoveResult(gameState.player, hint.direction, boxSet)
+            : getWorldMoveResult(gameState.player, hint.direction, boxSet);
+          if (!move) {
+            continue;
+          }
+          const hintGroup = createSvgElement("g", {
+            class: "move-hint",
+            "aria-hidden": "true"
+          });
+          const unitX = hint.axisX;
+          const unitY = hint.axisY;
+          const normalX = -unitY;
+          const normalY = unitX;
+          const startX = center.x + unitX * TRI_SIDE * hint.anchor;
+          const startY = center.y + unitY * TRI_SIDE * hint.anchor;
+          const endX = startX + unitX * TRI_SIDE * hint.length;
+          const endY = startY + unitY * TRI_SIDE * hint.length;
+          const headBaseX = endX - unitX * TRI_SIDE * 0.048;
+          const headBaseY = endY - unitY * TRI_SIDE * 0.048;
+          const headWidth = TRI_SIDE * 0.031;
+          const keyX = endX + unitX * TRI_SIDE * (hint.keyOffset + 0.05);
+          const keyY = endY + unitY * TRI_SIDE * (hint.keyOffset + 0.05);
+          const keyWidth = TRI_SIDE * 0.224;
+          const keyHeight = TRI_SIDE * 0.248;
+
+          hintGroup.appendChild(createSvgElement("line", {
+            x1: startX,
+            y1: startY,
+            x2: headBaseX,
+            y2: headBaseY,
+            class: "move-hint-line"
+          }));
+          hintGroup.appendChild(createSvgElement("polygon", {
+            points: [
+              [endX, endY],
+              [headBaseX + normalX * headWidth, headBaseY + normalY * headWidth],
+              [headBaseX - normalX * headWidth, headBaseY - normalY * headWidth]
+            ].map((point) => point.join(",")).join(" "),
+            class: "move-hint-head"
+          }));
+          hintGroup.appendChild(createSvgElement("rect", {
+            x: keyX - keyWidth / 2,
+            y: keyY - keyHeight / 2,
+            width: keyWidth,
+            height: keyHeight,
+            rx: TRI_SIDE * 0.018,
+            ry: TRI_SIDE * 0.018,
+            class: "move-hint-keycap"
+          }));
+          hintGroup.appendChild(createSvgElement("text", {
+            x: keyX,
+            y: keyY + 0.5,
+            class: "move-hint-keytext"
+          }));
+          hintGroup.lastChild.textContent = hint.keyLabel;
+          hintLayer.appendChild(hintGroup);
+        }
+
+        interactionGroup.appendChild(hoverZone);
+        interactionGroup.appendChild(hintLayer);
+        interactionLayer.appendChild(interactionGroup);
+      }
+
+      boardElement.appendChild(tileLayer);
+      boardElement.appendChild(markerLayer);
+      boardElement.appendChild(actorLayer);
+      boardElement.appendChild(interactionLayer);
+    }
+
+    function updateUiText() {
+      const solvedNow = isSolved(currentLevel, gameState);
+      const solvedBefore = storageModel.solved[currentLevelIndex];
+      const solvedTotal = storageModel.solved.filter(Boolean).length;
+
+      levelNumberElement.textContent = (currentLevelIndex + 1) + " / " + LEVELS.length;
+      moveCountElement.textContent = String(gameState.moveCount);
+      pushCountElement.textContent = String(gameState.pushCount);
+      solvedCountElement.textContent = solvedTotal + " / " + LEVELS.length;
+      levelNameElement.textContent = currentLevel.name;
+      levelBlurbElement.textContent = currentLevel.blurb;
+
+      winBannerElement.classList.toggle("visible", solvedNow);
+      winTextElement.textContent = currentLevelIndex < LEVELS.length - 1
+        ? "All crates are on targets. You can keep optimizing, or move to the next level."
+        : "All crates are on targets. That clears the last built-in level.";
+
+      document.getElementById("undoBtn").disabled = gameState.history.length === 0;
+      document.getElementById("padUndo").disabled = gameState.history.length === 0;
+      document.getElementById("prevBtn").disabled = currentLevelIndex === 0;
+      document.getElementById("nextBtn").disabled = currentLevelIndex === LEVELS.length - 1;
+    }
+
+    function render() {
+      renderBoard();
+      updateUiText();
+    }
+
+    // Input handling
+    function changeLevel(nextIndex) {
+      if (nextIndex < 0 || nextIndex >= LEVELS.length || nextIndex === currentLevelIndex) {
+        return;
+      }
+      rememberCurrentLevelState();
+      currentLevelIndex = nextIndex;
+      currentLevel = LEVELS[currentLevelIndex];
+      const restored = storageModel.states[currentLevelIndex];
+      gameState = restored ? restoreSnapshot(restored) : createFreshLevelState(currentLevel);
+      if (restored) {
+        gameState.history = restored.history.map(snapshotState);
+      }
+      storageModel.currentLevel = currentLevelIndex;
+      saveStorage();
+      render();
+    }
+
+    function resetAllProgress() {
+      const confirmed = window.confirm("Reset every saved level state, solved mark, move count, and undo history?");
+      if (!confirmed) {
+        return;
+      }
+      storageModel = freshStorageModel();
+      currentLevelIndex = 0;
+      currentLevel = LEVELS[0];
+      gameState = createFreshLevelState(currentLevel);
+      saveStorage();
+      render();
+    }
+
+    function handleKeydown(event) {
+      const targetTag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : "";
+      if (targetTag === "input" || targetTag === "textarea" || targetTag === "select") {
+        return;
+      }
+
+      const key = event.key;
+      let handled = true;
+
+      if (key === "q" || key === "Q") {
+        attemptMoveByDirection("upLeft");
+      } else if (key === "e" || key === "E") {
+        attemptMoveByDirection("upRight");
+      } else if (key === "ArrowLeft" || key === "a" || key === "A") {
+        attemptMoveByDirection("left");
+      } else if (key === "ArrowRight" || key === "d" || key === "D") {
+        attemptMoveByDirection("right");
+      } else if (key === "z" || key === "Z") {
+        attemptMoveByDirection("downLeft");
+      } else if (key === "c" || key === "C") {
+        attemptMoveByDirection("downRight");
+      } else if (key === "ArrowUp" || key === "w" || key === "W") {
+        attemptVerticalMove("up");
+      } else if (key === "ArrowDown" || key === "x" || key === "X") {
+        attemptVerticalMove("down");
+      } else if (key === "Backspace" || key === "u" || key === "U") {
+        undoMove();
+      } else if (key === "r" || key === "R") {
+        restartLevel();
+      } else if (key === "[" || key === "PageUp") {
+        changeLevel(currentLevelIndex - 1);
+      } else if (key === "]" || key === "PageDown") {
+        changeLevel(currentLevelIndex + 1);
+      } else {
+        handled = false;
+      }
+
+      if (handled) {
+        event.preventDefault();
+      }
+    }
+
+    function bindUi() {
+      document.getElementById("restartBtn").addEventListener("click", restartLevel);
+      document.getElementById("undoBtn").addEventListener("click", undoMove);
+      document.getElementById("prevBtn").addEventListener("click", () => changeLevel(currentLevelIndex - 1));
+      document.getElementById("nextBtn").addEventListener("click", () => changeLevel(currentLevelIndex + 1));
+      document.getElementById("resetBtn").addEventListener("click", resetAllProgress);
+      document.getElementById("padUpLeft").addEventListener("click", () => attemptMoveByDirection("upLeft"));
+      document.getElementById("padUp").addEventListener("click", () => attemptVerticalMove("up"));
+      document.getElementById("padUpRight").addEventListener("click", () => attemptMoveByDirection("upRight"));
+      document.getElementById("padLeft").addEventListener("click", () => attemptMoveByDirection("left"));
+      document.getElementById("padRight").addEventListener("click", () => attemptMoveByDirection("right"));
+      document.getElementById("padDownLeft").addEventListener("click", () => attemptMoveByDirection("downLeft"));
+      document.getElementById("padDown").addEventListener("click", () => attemptVerticalMove("down"));
+      document.getElementById("padDownRight").addEventListener("click", () => attemptMoveByDirection("downRight"));
+      window.addEventListener("keydown", handleKeydown, { passive: false });
+    }
+
+    // Boot
+    let storageModel = loadStorage();
+    let currentLevelIndex = storageModel.currentLevel;
+    let currentLevel = LEVELS[currentLevelIndex];
+    let gameState = storageModel.states[currentLevelIndex]
+      ? restoreSnapshot(storageModel.states[currentLevelIndex])
+      : createFreshLevelState(currentLevel);
+
+    if (storageModel.states[currentLevelIndex]) {
+      gameState.history = storageModel.states[currentLevelIndex].history.map(snapshotState);
+    }
+
+    bindUi();
+    rememberCurrentLevelState();
+    render();
+  </script>
+</body>
+</html>
