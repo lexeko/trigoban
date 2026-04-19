@@ -29,7 +29,7 @@ Controls:
 Tip:
 What looks like a straight path often isn't - think in diagonals.
 
-Why triangles?
+## Why triangles?
 
 The triangular grid removes the symmetry you're used to in Sokoban.
 
