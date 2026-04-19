@@ -93,6 +93,44 @@
       margin-bottom: 16px;
     }
 
+    .title-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-top: 10px;
+      flex-shrink: 0;
+    }
+
+    .icon-link {
+      width: 46px;
+      height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      text-decoration: none;
+      transition: transform 120ms ease, color 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    .icon-link:hover,
+    .icon-link:focus-visible {
+      color: #fff3cf;
+      background: rgba(36, 95, 115, 0.42);
+      border-color: rgba(255, 211, 125, 0.38);
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .icon-link svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+      display: block;
+    }
+
     .title-block {
       position: relative;
       padding: 10px 0 6px;
@@ -663,6 +701,13 @@
         <div class="title-block">
           <h1>Trigoban</h1>
           <p>Push every crate onto a glowing target across a tiling of alternating triangles. Crates only move one at a time, and only if the tile beyond is clear.</p>
+        </div>
+        <div class="title-links">
+          <a class="icon-link" href="https://github.com/lexeko/trigoban" target="_blank" rel="noreferrer noopener" aria-label="Trigoban on GitHub" title="Trigoban on GitHub">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 .5C5.65.5.5 5.66.5 12.02c0 5.09 3.3 9.4 7.88 10.92.58.11.79-.25.79-.56v-2.16c-3.21.7-3.89-1.37-3.89-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.78 1.2 1.78 1.2 1.03 1.77 2.71 1.26 3.37.97.1-.75.4-1.26.73-1.55-2.56-.29-5.26-1.29-5.26-5.74 0-1.27.46-2.31 1.19-3.12-.12-.29-.52-1.48.11-3.08 0 0 .98-.31 3.2 1.19a11 11 0 0 1 5.83 0c2.22-1.5 3.2-1.19 3.2-1.19.64 1.6.24 2.79.12 3.08.74.81 1.19 1.85 1.19 3.12 0 4.46-2.71 5.44-5.29 5.73.42.36.79 1.05.79 2.13v3.15c0 .31.21.68.8.56A11.53 11.53 0 0 0 23.5 12C23.5 5.66 18.35.5 12 .5Z"/>
+            </svg>
+          </a>
         </div>
       </div>
 
