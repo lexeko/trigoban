@@ -10,9 +10,9 @@ Trigoban takes the classic "push the boxes onto targets" idea and twists it just
 
 Instead of a square grid, everything happens on alternating triangles. That small change makes movement feel different in a surprising way:
 
-- there's no true 'up' or 'down'
-- pushes don't always go where you expect
-- positioning matters more than it first seems
+- besides up/down, there are also angled movements
+- what looks like a straight push often becomes a zig-zag
+- some situations become orientation challenges instead of simple path finding
 
 It's simple to learn, but quickly becomes a spatial puzzle.
 
