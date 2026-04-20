@@ -24,7 +24,7 @@ It's simple to learn, but quickly becomes a spatial puzzle.
 - You cannot pull boxes
 
 Controls:
-- Arrow keys or QWEADZXC
+- Arrow keys or QWEADZXC. Latter also cover diagonal movements. 
 
 Tip:
 What looks like a straight path often isn't - think in diagonals.
