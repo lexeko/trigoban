@@ -573,7 +573,8 @@
       pointer-events: none;
     }
 
-    .move-hints.visible {
+    .move-hints.visible,
+    .move-hints.keyboard-visible {
       opacity: 1;
       pointer-events: auto;
     }
@@ -597,6 +598,20 @@
       stroke-width: 1.1;
       vector-effect: non-scaling-stroke;
       pointer-events: none;
+    }
+
+    .move-hint-box-preview {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .move-hint-box-preview .box-top {
+      fill: #ffe09d;
+    }
+
+    .move-hint-box-preview .box-front {
+      fill: #efb45f;
+      filter: drop-shadow(0 0 8px rgba(255, 212, 119, 0.36));
     }
 
     .move-hint-keycap {
@@ -736,7 +751,7 @@
           <strong>Level Solved</strong>
           <span id="winText">All crates are on targets.</span>
         </div>
-        <div class="board-caption">Hover the worker to reveal move hints.</div>
+        <div class="board-caption">Hover the worker or press Space to reveal move hints.</div>
       </div>
     </section>
 
@@ -1558,6 +1573,9 @@
         const hideHints = () => hintLayer.classList.remove("visible");
         interactionGroup.addEventListener("mouseenter", showHints);
         interactionGroup.addEventListener("mouseleave", hideHints);
+        if (keyboardHintsVisible) {
+          hintLayer.classList.add("keyboard-visible");
+        }
         actorLayer.appendChild(group);
 
         const SQRT3_OVER_2 = Math.sqrt(3) / 2;
@@ -1572,6 +1590,84 @@
           { keyLabel: "C", direction: "downRight", type: "world", axisX: 0.5, axisY: SQRT3_OVER_2, anchor: 0.26, length: 0.12, keyOffset: 0.085 }
         ];
 
+        function appendHintArrow(parent, start, end, classPrefix, headScale = 1) {
+          const dx = end.x - start.x;
+          const dy = end.y - start.y;
+          const distance = Math.hypot(dx, dy);
+          if (distance <= 0) {
+            return;
+          }
+          const unitX = dx / distance;
+          const unitY = dy / distance;
+          const normalX = -unitY;
+          const normalY = unitX;
+          const headBaseX = end.x - unitX * TRI_SIDE * 0.048 * headScale;
+          const headBaseY = end.y - unitY * TRI_SIDE * 0.048 * headScale;
+          const headWidth = TRI_SIDE * 0.031 * headScale;
+
+          parent.appendChild(createSvgElement("line", {
+            x1: start.x,
+            y1: start.y,
+            x2: headBaseX,
+            y2: headBaseY,
+            class: classPrefix + "-line"
+          }));
+          parent.appendChild(createSvgElement("polygon", {
+            points: [
+              [end.x, end.y],
+              [headBaseX + normalX * headWidth, headBaseY + normalY * headWidth],
+              [headBaseX - normalX * headWidth, headBaseY - normalY * headWidth]
+            ].map((point) => point.join(",")).join(" "),
+            class: classPrefix + "-head"
+          }));
+        }
+
+        function appendHintBoxPreview(parent, center) {
+          const group = createSvgElement("g", {
+            class: "move-hint-box-preview"
+          });
+          const size = TRI_SIDE * 0.2;
+          const lip = TRI_SIDE * 0.036;
+          const left = center.x - size / 2;
+          const right = center.x + size / 2;
+          const top = center.y - size / 2 + lip * 0.35;
+          const bottom = center.y + size / 2 + lip * 0.15;
+          const inset = size * 0.16;
+
+          group.appendChild(createSvgElement("rect", {
+            x: left,
+            y: top,
+            width: size,
+            height: size * 0.18,
+            rx: TRI_SIDE * 0.014,
+            ry: TRI_SIDE * 0.014,
+            class: "box-top"
+          }));
+          group.appendChild(createSvgElement("rect", {
+            x: left,
+            y: top + size * 0.14,
+            width: size,
+            height: bottom - (top + size * 0.14),
+            rx: TRI_SIDE * 0.018,
+            ry: TRI_SIDE * 0.018,
+            class: "box-front"
+          }));
+          for (const point of [
+            [left + inset * 1.125, top + size * 0.29],
+            [right - inset * 1.125, top + size * 0.29],
+            [left + inset * 1.125, bottom - inset * 0.85],
+            [right - inset * 1.125, bottom - inset * 0.85]
+          ]) {
+            group.appendChild(createSvgElement("circle", {
+              cx: point[0],
+              cy: point[1],
+              r: TRI_SIDE * 0.011,
+              class: "box-nail"
+            }));
+          }
+          parent.appendChild(group);
+        }
+
         for (const hint of hintDefinitions) {
           const move = hint.type === "vertical"
             ? getVerticalMoveResult(gameState.player, hint.direction, boxSet)
@@ -1585,35 +1681,46 @@
           });
           const unitX = hint.axisX;
           const unitY = hint.axisY;
-          const normalX = -unitY;
-          const normalY = unitX;
           const startX = center.x + unitX * TRI_SIDE * hint.anchor;
           const startY = center.y + unitY * TRI_SIDE * hint.anchor;
           const endX = startX + unitX * TRI_SIDE * hint.length;
           const endY = startY + unitY * TRI_SIDE * hint.length;
-          const headBaseX = endX - unitX * TRI_SIDE * 0.048;
-          const headBaseY = endY - unitY * TRI_SIDE * 0.048;
-          const headWidth = TRI_SIDE * 0.031;
           const keyX = endX + unitX * TRI_SIDE * (hint.keyOffset + 0.05);
           const keyY = endY + unitY * TRI_SIDE * (hint.keyOffset + 0.05);
           const keyWidth = TRI_SIDE * 0.224;
           const keyHeight = TRI_SIDE * 0.248;
 
-          hintGroup.appendChild(createSvgElement("line", {
-            x1: startX,
-            y1: startY,
-            x2: headBaseX,
-            y2: headBaseY,
-            class: "move-hint-line"
-          }));
-          hintGroup.appendChild(createSvgElement("polygon", {
-            points: [
-              [endX, endY],
-              [headBaseX + normalX * headWidth, headBaseY + normalY * headWidth],
-              [headBaseX - normalX * headWidth, headBaseY - normalY * headWidth]
-            ].map((point) => point.join(",")).join(" "),
-            class: "move-hint-head"
-          }));
+          appendHintArrow(
+            hintGroup,
+            { x: startX, y: startY },
+            { x: endX, y: endY },
+            "move-hint",
+            1
+          );
+          if (move.beyondKey) {
+            const destinationPosition = parseKey(move.beyondKey);
+            const destinationCenter = triangleCentroid(destinationPosition.row, destinationPosition.col);
+            const keyToBoxDx = destinationCenter.x - keyX;
+            const keyToBoxDy = destinationCenter.y - keyY;
+            const keyToBoxDistance = Math.hypot(keyToBoxDx, keyToBoxDy);
+            const keyToBoxUnitX = keyToBoxDistance > 0 ? keyToBoxDx / keyToBoxDistance : 0;
+            const keyToBoxUnitY = keyToBoxDistance > 0 ? keyToBoxDy / keyToBoxDistance : 0;
+            const destinationPreviewRadius = TRI_SIDE * 0.13;
+            appendHintBoxPreview(hintGroup, destinationCenter);
+            appendHintArrow(
+              hintGroup,
+              {
+                x: keyX + keyToBoxUnitX * keyWidth * 0.78,
+                y: keyY + keyToBoxUnitY * keyHeight * 0.78
+              },
+              {
+                x: destinationCenter.x - keyToBoxUnitX * destinationPreviewRadius,
+                y: destinationCenter.y - keyToBoxUnitY * destinationPreviewRadius
+              },
+              "move-hint",
+              1
+            );
+          }
           hintGroup.appendChild(createSvgElement("rect", {
             x: keyX - keyWidth / 2,
             y: keyY - keyHeight / 2,
@@ -1702,6 +1809,20 @@
       render();
     }
 
+    function revealMoveHintsBriefly() {
+      keyboardHintsVisible = true;
+      document.querySelectorAll(".move-hints").forEach((hintLayer) => {
+        hintLayer.classList.add("keyboard-visible");
+      });
+      window.clearTimeout(keyboardHintsTimer);
+      keyboardHintsTimer = window.setTimeout(() => {
+        keyboardHintsVisible = false;
+        document.querySelectorAll(".move-hints").forEach((hintLayer) => {
+          hintLayer.classList.remove("keyboard-visible");
+        });
+      }, 5000);
+    }
+
     function handleKeydown(event) {
       const targetTag = event.target && event.target.tagName ? event.target.tagName.toLowerCase() : "";
       if (targetTag === "input" || targetTag === "textarea" || targetTag === "select") {
@@ -1735,6 +1856,8 @@
         changeLevel(currentLevelIndex - 1);
       } else if (key === "]" || key === "PageDown") {
         changeLevel(currentLevelIndex + 1);
+      } else if (key === " " || event.code === "Space") {
+        revealMoveHintsBriefly();
       } else {
         handled = false;
       }
@@ -1765,6 +1888,8 @@
     let storageModel = loadStorage();
     let currentLevelIndex = storageModel.currentLevel;
     let currentLevel = LEVELS[currentLevelIndex];
+    let keyboardHintsVisible = false;
+    let keyboardHintsTimer = 0;
     let gameState = storageModel.states[currentLevelIndex]
       ? restoreSnapshot(storageModel.states[currentLevelIndex])
       : createFreshLevelState(currentLevel);

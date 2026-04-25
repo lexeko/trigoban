@@ -24,10 +24,12 @@ It's simple to learn, but quickly becomes a spatial puzzle.
 - You cannot pull boxes
 
 Controls:
-- Arrow keys or QWEADZXC. Latter also cover diagonal movements. 
+- Arrow keys or QWEADZXC. Latter also cover diagonal movements.
+- Press Space to show movement hints for 5 seconds.
+- Hover the worker to show movement hints while hovering.
 
 Tip:
-What looks like a straight path often isn't - think in diagonals.
+What looks like a straight path often isn't - think in diagonals. When a move would push a box, hints show a translucent preview of where that box will land.
 
 ## Why triangles?
 
